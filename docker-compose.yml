@@ -1,0 +1,38 @@
+services:
+  dev:
+    image: ghcr.io/ashswing/ashlab-dev:latest
+    pull_policy: always
+    container_name: ashlab
+    hostname: ashlab
+    user: root
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./:/workspace
+      - tailscale-state:/var/lib/tailscale
+    working_dir: /workspace
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY:-}
+      - TS_HOSTNAME=ashlab
+      - SSH_ROOT_PASSWORD=${SSH_ROOT_PASSWORD:-root}
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    security_opt:
+      - seccomp:unconfined
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: ashlab-nginx
+    depends_on:
+      - dev
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
+
+volumes:
+  tailscale-state:
